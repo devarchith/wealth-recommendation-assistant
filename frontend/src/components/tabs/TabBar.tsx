@@ -51,13 +51,24 @@ export default function TabBar({ chatContent }: TabBarProps) {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto chat-scroll">
-        <div className={clsx('max-w-4xl mx-auto px-4 py-4', activeTab === 'chat' ? 'h-full flex flex-col' : '')}>
-          {activeTab === 'chat'       && chatContent}
-          {activeTab === 'budget'     && <BudgetTab />}
-          {activeTab === 'investment' && <InvestmentTab />}
-          {activeTab === 'tax'        && <TaxTab />}
-        </div>
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Chat tab: overflow is handled inside chatContent (MessageList scrolls) */}
+        {activeTab === 'chat' && (
+          <div className="flex-1 overflow-hidden flex flex-col max-w-4xl w-full mx-auto px-4 pb-4">
+            {chatContent}
+          </div>
+        )}
+
+        {/* Non-chat tabs: this container scrolls the tab content */}
+        {activeTab !== 'chat' && (
+          <div className="flex-1 overflow-y-auto chat-scroll">
+            <div className="max-w-4xl mx-auto px-4 py-4">
+              {activeTab === 'budget'     && <BudgetTab />}
+              {activeTab === 'investment' && <InvestmentTab />}
+              {activeTab === 'tax'        && <TaxTab />}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
