@@ -1,0 +1,116 @@
+# ── Serverless Framework Configuration ──────────────────────────────────────
+# Deploys the ML service Flask app as an AWS Lambda function behind
+# an API Gateway HTTP API.
+#
+# Install: npm install -g serverless
+# Deploy:  serverless deploy --stage prod
+# Remove:  serverless remove --stage prod
+
+service: wealth-advisor-ml-service
+
+frameworkVersion: ">=3.0.0 <4.0.0"
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 1024       # MB — headroom for FAISS + transformer inference
+  timeout: 29            # seconds (API GW limit is 30s)
+  architecture: x86_64
+
+  # Environment variables (override per stage via serverless --env or SSM)
+  environment:
+    ML_SERVICE_PORT: "5001"
+    FLASK_ENV: production
+    FLASK_DEBUG: "0"
+    EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+    FAISS_INDEX_PATH: /tmp/faiss_index   # Lambda writable path
+    EMBEDDING_CACHE_PATH: /tmp/embedding_cache
+    MEMORY_WINDOW_SIZE: "5"
+
+  # IAM role statements (add S3 if you load FAISS index from S3)
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "arn:aws:logs:*:*:*"
+
+  # API Gateway HTTP API (cheaper and lower latency than REST API)
+  httpApi:
+    cors:
+      allowedOrigins:
+        - "http://localhost:3000"
+        - "https://${self:custom.frontendDomain}"
+      allowedHeaders:
+        - Content-Type
+        - X-Session-ID
+      allowedMethods:
+        - GET
+        - POST
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+
+custom:
+  frontendDomain: "your-domain.com"
+  pythonRequirements:
+    dockerizePip: true   # Compile native dependencies (faiss-cpu) for Linux
+    zip: true
+    slim: true
+    fileName: ../../ml-service/requirements.txt
+    noDeploy:
+      - pytest
+      - pytest-cov
+
+functions:
+  app:
+    handler: infrastructure/aws/lambda_handler.handler
+    description: "WealthAdvisor AI ML Service — Flask + LangChain + FAISS"
+    events:
+      - httpApi:
+          path: /health
+          method: GET
+      - httpApi:
+          path: /ready
+          method: GET
+      - httpApi:
+          path: /chat
+          method: POST
+      - httpApi:
+          path: /feedback
+          method: POST
+    # Provisioned concurrency keeps 2 warm instances to avoid cold starts
+    # Comment out to save cost in dev/staging environments
+    # provisionedConcurrency: 2
+
+package:
+  individually: false
+  patterns:
+    - "!node_modules/**"
+    - "!frontend/**"
+    - "!api-gateway/**"
+    - "!**/__pycache__/**"
+    - "!**/*.pyc"
+    - "!**/.pytest_cache/**"
+    - "ml-service/src/**"
+    - "infrastructure/aws/lambda_handler.py"
+
+plugins:
+  - serverless-python-requirements
+
+# ── Usage notes ──────────────────────────────────────────────────────────────
+# 1. Install Serverless Python Requirements plugin:
+#    npm install --save-dev serverless-python-requirements
+#
+# 2. First deployment builds dependencies in Docker (matches Lambda runtime):
+#    serverless deploy --stage prod --region us-east-1
+#
+# 3. For sustained 8K concurrent user loads, prefer ECS/Fargate with the
+#    Docker image. Lambda is ideal for bursty or low-frequency workloads.
+#    Warm-up strategy: use provisioned concurrency or an EventBridge rule
+#    to ping /health every 5 minutes.
