@@ -7,14 +7,16 @@ import dynamic from 'next/dynamic';
 const BudgetTab     = dynamic(() => import('./BudgetTab'),     { ssr: false });
 const InvestmentTab = dynamic(() => import('./InvestmentTab'), { ssr: false });
 const TaxTab        = dynamic(() => import('./TaxTab'),        { ssr: false });
+const IndiaTaxTab   = dynamic(() => import('./IndiaTaxTab'),   { ssr: false });
 
-type Tab = 'chat' | 'budget' | 'investment' | 'tax';
+type Tab = 'chat' | 'budget' | 'investment' | 'tax' | 'india-tax';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'chat',       label: 'AI Chat',     icon: '💬' },
   { id: 'budget',     label: 'Budget',      icon: '📊' },
   { id: 'investment', label: 'Invest',      icon: '📈' },
-  { id: 'tax',        label: 'Tax',         icon: '🧾' },
+  { id: 'tax',        label: 'US Tax',      icon: '🧾' },
+  { id: 'india-tax',  label: 'India Tax',   icon: '🇮🇳' },
 ];
 
 interface TabBarProps {
@@ -66,6 +68,7 @@ export default function TabBar({ chatContent }: TabBarProps) {
               {activeTab === 'budget'     && <BudgetTab />}
               {activeTab === 'investment' && <InvestmentTab />}
               {activeTab === 'tax'        && <TaxTab />}
+              {activeTab === 'india-tax'  && <IndiaTaxTab />}
             </div>
           </div>
         )}
