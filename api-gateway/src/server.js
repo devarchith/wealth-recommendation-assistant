@@ -20,6 +20,8 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const chatRoutes      = require('./routes/chat');
 const healthRoutes    = require('./routes/health');
 const whatsappRoutes  = require('./routes/whatsapp');
+const authRoutes      = require('./routes/auth');
+const billingRoutes   = require('./routes/billing');
 
 const app = express();
 
@@ -55,6 +57,8 @@ app.use('/api/', rateLimiter);
 app.use('/api', healthRoutes);
 app.use('/api', chatRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/billing', billingRoutes);
 
 // ── 404 and error handlers ─────────────────────────────────────────────────
 app.use(notFoundHandler);
