@@ -6,6 +6,7 @@ import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import Header from './Header';
 import TabBar from './tabs/TabBar';
+import DisclaimerFooter from './DisclaimerFooter';
 import { Message, ApiChatResponse } from '@/types/chat';
 import { sendMessage, sendFeedback } from '@/lib/apiClient';
 
@@ -117,6 +118,8 @@ export default function ChatLayout() {
       <main className="flex-1 overflow-hidden flex flex-col">
         <TabBar chatContent={chatPanel} />
       </main>
+
+      <DisclaimerFooter />
     </div>
   );
 }
