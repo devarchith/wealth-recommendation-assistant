@@ -23,6 +23,7 @@ const whatsappRoutes  = require('./routes/whatsapp');
 const authRoutes      = require('./routes/auth');
 const billingRoutes   = require('./routes/billing');
 const adminRoutes     = require('./routes/admin');
+const privacyRoutes   = require('./routes/privacy');
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/privacy', privacyRoutes);
 
 // ── 404 and error handlers ─────────────────────────────────────────────────
 app.use(notFoundHandler);
