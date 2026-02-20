@@ -297,6 +297,94 @@ wealth-recommendation-assistant/
 
 ---
 
+## India Market Focus
+
+WealthAdvisor AI is purpose-built for the Indian financial ecosystem:
+
+| Domain | Coverage |
+|---|---|
+| **Income Tax** | New vs Old regime comparison, ITR-1/2/3/4 guidance, deduction optimizer (80C/80D/HRA), TDS Form 26AS reconciliation |
+| **Capital Gains** | Post-Budget 2024 rates — STCG 111A @20%, LTCG 112A @12.5% (₹1.25L exempt), debt MF rules |
+| **Advance Tax** | Quarterly schedule (Jun/Sep/Dec/Mar), Sec 234B/234C interest calculator |
+| **GST** | GSTR-1/GSTR-3B filing assistant, HSN/SAC rate lookup, ITC reconciliation, late fee calculator |
+| **Payroll** | EPF (12%+12%), ESIC (0.75%+3.25%), salary TDS Sec 192, CTC breakdown |
+| **Gold Shop** | 3% GST + 5% making charges, TCS 206C(1F) >₹2L, hallmarking |
+| **Real Estate** | Stamp duty (6 states), TDS 194IA >₹50L, GST on under-construction |
+| **Freelancers** | Sec 44ADA presumptive (50%), foreign remittance Form 15CA/15CB, DTAA rates |
+| **CA Tools** | Multi-client dashboard, bulk ITR, tax notice templates (143/148/271), document vault |
+| **Language** | English + Telugu bilingual (UI + WhatsApp bot) |
+
+---
+
+## Pricing Plans
+
+### Plan Comparison
+
+| Feature | Free | Individual ₹499/mo | Business ₹1,499/mo | CA Professional ₹3,999/mo |
+|---|:---:|:---:|:---:|:---:|
+| AI Chat queries | 10/day | 100/day | 500/day | Unlimited |
+| US Tax calculator | ✅ | ✅ | ✅ | ✅ |
+| Budget planner | ✅ | ✅ | ✅ | ✅ |
+| India Tax dashboard (ITR + TDS) | ❌ | ✅ | ✅ | ✅ |
+| Capital gains calculator | ❌ | ✅ | ✅ | ✅ |
+| Deduction optimizer (80C/80D/HRA) | ❌ | ✅ | ✅ | ✅ |
+| WhatsApp bot (EN + Telugu) | ❌ | ✅ | ✅ | ✅ |
+| PDF export | ❌ | ✅ | ✅ | ✅ |
+| GST Filing Assistant (GSTR-1/3B) | ❌ | ❌ | ✅ | ✅ |
+| Payroll module (PF + ESI + TDS) | ❌ | ❌ | ✅ | ✅ |
+| Inventory management | ❌ | ❌ | ✅ | ✅ |
+| P&L + Balance Sheet generator | ❌ | ❌ | ✅ | ✅ |
+| CA Client Management (100 clients) | ❌ | ❌ | ❌ | ✅ |
+| Bulk ITR generation workflow | ❌ | ❌ | ❌ | ✅ |
+| Tax Notice Response Templates | ❌ | ❌ | ❌ | ✅ |
+| Document Vault (encrypted) | ❌ | ❌ | ❌ | ✅ |
+| Audit Trail Logging | ❌ | ❌ | ❌ | ✅ |
+| REST API access | ❌ | ❌ | ❌ | ✅ |
+| Support | Community | Email | Priority Email | Dedicated Phone |
+| Annual billing (save ~20%) | — | ₹4,788/yr | ₹14,388/yr | ₹38,388/yr |
+
+### Razorpay Integration
+
+Payments are processed via Razorpay. Configure your credentials in `.env`:
+
+```env
+RAZORPAY_KEY_ID=rzp_live_xxxxx
+RAZORPAY_KEY_SECRET=your_secret
+RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
+RAZORPAY_PLAN_INDIVIDUAL=plan_individual_499
+RAZORPAY_PLAN_BUSINESS=plan_business_1499
+RAZORPAY_PLAN_CA=plan_ca_3999
+```
+
+Payment flow: `POST /api/billing/create-order` → Razorpay checkout → `POST /api/billing/verify` (HMAC SHA256 signature check) → plan activated.
+
+### Authentication
+
+```env
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# Phone OTP (MSG91)
+MSG91_AUTH_KEY=your_msg91_key
+MSG91_TEMPLATE_ID=your_template_id
+
+# Session
+SESSION_SECRET=your_strong_random_secret
+APP_URL=https://yourdomain.com
+```
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/auth/google` | GET | Initiate Google OAuth 2.0 |
+| `/api/auth/google/callback` | GET | OAuth callback — creates session |
+| `/api/auth/otp/send` | POST | Send 6-digit OTP to Indian mobile |
+| `/api/auth/otp/verify` | POST | Verify OTP — creates session |
+| `/api/auth/me` | GET | Current authenticated user |
+| `/api/auth/logout` | POST | Destroy session |
+
+---
+
 ## License
 
 MIT © Devarchith Parashara Batchu
