@@ -16,6 +16,10 @@ export interface Message {
   timestamp: string;
   feedback?: 'up' | 'down' | null;
   isStreaming?: boolean;
+  /** Confidence score 0–100 from ML pipeline (optional, assistant only) */
+  confidence?: number;
+  /** Regulation or section cited by the AI, e.g. "Sec 80C IT Act" (optional) */
+  regulation_ref?: string;
 }
 
 export interface ChatState {
@@ -32,4 +36,8 @@ export interface ApiChatResponse {
   gateway_latency_ms: number;
   session_id: string;
   message_id: string;
+  /** Confidence score 0–100 returned by ML service */
+  confidence?: number;
+  /** Regulation or section cited, e.g. "Sec 80C IT Act 1961" */
+  regulation_ref?: string;
 }
