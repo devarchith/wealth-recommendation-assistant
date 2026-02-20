@@ -4,7 +4,7 @@
  * Sends proactive compliance alerts to rice mill owners via WhatsApp.
  * Reuses the existing WA_API_BASE / WA_PHONE_ID / WA_TOKEN from whatsapp.js.
  *
- * Alert categories (Telugu primary, English fallback):
+ * Alert categories (English default — Telugu coming soon):
  *  1. GST late filing penalty (GSTR-1, GSTR-3B overdue)
  *  2. Cash payment violation (₹2L limit alert)
  *  3. Advance tax reminder (234B/C interest warning)
@@ -14,12 +14,11 @@
  *  7. E-way bill reminder (vehicle dispatch)
  *  8. Milling efficiency alert (low outturn)
  *
- * Telugu translation status: ACTIVE for rice mill module
- * (Rice mill owners in AP/TS predominantly Telugu-speaking)
+ * Telugu translation status: COMING SOON (templates present, not active)
  *
  * Usage:
  *   const { buildRiceMillAlert, sendRiceMillAlert } = require('./ricemillWhatsApp');
- *   await sendRiceMillAlert('+919876543210', 'gst_penalty', data, 'te');
+ *   await sendRiceMillAlert('+919876543210', 'gst_penalty', data, 'en');
  */
 
 'use strict';
@@ -133,7 +132,7 @@ const ALERTS_EN = {
 };
 
 // ---------------------------------------------------------------------------
-// Template builders — Telugu (ACTIVE for rice mill module)
+// Template builders — Telugu (COMING SOON — templates present, not active)
 // ---------------------------------------------------------------------------
 
 const ALERTS_TE = {
@@ -241,10 +240,10 @@ const ALERTS_TE = {
  * Build a rice mill alert message.
  * @param {string} alertKey   - e.g. 'gst_penalty', 'cash_payment_alert'
  * @param {object} data       - Template variables
- * @param {string} [locale]   - 'te' (Telugu, active for rice mills) | 'en'
+ * @param {string} [locale]   - 'en' (English, default) | 'te' (Telugu, coming soon)
  * @returns {string} Formatted WhatsApp message
  */
-function buildRiceMillAlert(alertKey, data, locale = 'te') {
+function buildRiceMillAlert(alertKey, data, locale = 'en') {
   const templates = locale === 'te' ? ALERTS_TE : ALERTS_EN;
   const fn = templates[alertKey] || ALERTS_EN[alertKey];
   if (!fn) throw new Error(`Unknown rice mill alert: ${alertKey}`);
@@ -255,7 +254,7 @@ function buildRiceMillAlert(alertKey, data, locale = 'te') {
  * Send a rice mill alert via Meta WhatsApp Cloud API.
  * Reuses WA_API_BASE/WA_PHONE_ID/WA_TOKEN from environment (same as whatsapp.js).
  */
-async function sendRiceMillAlert(toPhone, alertKey, data, locale = 'te') {
+async function sendRiceMillAlert(toPhone, alertKey, data, locale = 'en') {
   const text = buildRiceMillAlert(alertKey, data, locale);
   if (!WA_PHONE_ID || !WA_TOKEN) {
     console.warn('[RiceMill-WA] WA credentials not configured — skipping send');
@@ -285,7 +284,7 @@ async function sendBulkRiceMillAlerts(mills) {
   const results = [];
   for (const mill of mills) {
     try {
-      await sendRiceMillAlert(mill.phone, mill.alertKey, mill.data, mill.locale || 'te');
+      await sendRiceMillAlert(mill.phone, mill.alertKey, mill.data, mill.locale || 'en');
       results.push({ phone: mill.phone, status: 'sent', alertKey: mill.alertKey });
       await new Promise(r => setTimeout(r, 250));   // rate limit
     } catch (err) {

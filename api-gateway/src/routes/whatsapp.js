@@ -1,12 +1,12 @@
 /**
  * WhatsApp Webhook Integration
- * Supports conversational tax queries in English and Telugu
+ * Supports conversational tax queries in English
  * via WhatsApp Business API (Meta Cloud API v19.0)
  *
  * Features:
  *   - Webhook verification (GET /api/whatsapp/webhook)
  *   - Incoming message handling (POST /api/whatsapp/webhook)
- *   - Language detection: English / Telugu
+ *   - Language: English (default) — Telugu coming soon
  *   - Routes to RAG pipeline for financial Q&A
  *   - Session-per-phone-number with 30-min expiry
  *   - Rich message formatting: text, list, button
@@ -57,20 +57,6 @@ setInterval(() => {
     }
   }
 }, 10 * 60 * 1000).unref();
-
-// ---------------------------------------------------------------------------
-// Language detection (Telugu Unicode block: U+0C00–U+0C7F)
-// ---------------------------------------------------------------------------
-
-function detectLanguage(text) {
-  // Telugu Unicode range
-  if (/[\u0C00-\u0C7F]/.test(text)) return 'te';
-  // Telugu transliteration keywords
-  const teluguKeywords = ['namaskaaram', 'namaste', 'pannu', 'aadaayam', 'vellu', 'cheppandi'];
-  const lower = text.toLowerCase();
-  if (teluguKeywords.some(kw => lower.includes(kw))) return 'te';
-  return 'en';
-}
 
 // ---------------------------------------------------------------------------
 // WhatsApp message sender
@@ -149,8 +135,7 @@ async function queryMLService(question, sessionId) {
 // Message handlers by intent keyword
 // ---------------------------------------------------------------------------
 
-const GREETING_KEYWORDS_EN = ['hi', 'hello', 'hey', 'start', 'help'];
-const GREETING_KEYWORDS_TE = ['హలో', 'నమస్కారం', 'నమస్తే', 'సహాయం'];
+const GREETING_KEYWORDS = ['hi', 'hello', 'hey', 'start', 'help'];
 
 const MENU_EN = `*WealthAdvisor AI* — your financial assistant
 Reply with a topic or ask any question:
@@ -163,21 +148,12 @@ Reply with a topic or ask any question:
 
 Or type your question directly!`;
 
-const MENU_TE = `*WealthAdvisor AI* — మీ ఆర్థిక సహాయకుడు
-ఒక అంశాన్ని ఎంచుకోండి లేదా ఏదైనా ప్రశ్న అడగండి:
+// Telugu menu — Coming Soon
+// const MENU_TE = ...
 
-1️⃣ ఆదాయపు పన్ను (ITR, TDS, రీఫండ్)
-2️⃣ GST & వ్యాపారం
-3️⃣ పెట్టుబడులు & పొదుపు
-4️⃣ బడ్జెట్ ప్లానింగ్
-5️⃣ మూలధన లాభాలు
-
-లేదా నేరుగా మీ ప్రశ్న అడగండి!`;
-
-function isGreeting(text, lang) {
+function isGreeting(text) {
   const lower = text.toLowerCase();
-  if (lang === 'te') return GREETING_KEYWORDS_TE.some(k => text.includes(k)) || GREETING_KEYWORDS_EN.some(k => lower.includes(k));
-  return GREETING_KEYWORDS_EN.some(k => lower.includes(k));
+  return GREETING_KEYWORDS.some(k => lower.includes(k));
 }
 
 // ---------------------------------------------------------------------------
@@ -233,10 +209,8 @@ router.post('/webhook', async (req, res) => {
           if (!text) continue;
 
           const session = getSession(phone);
-          const lang    = detectLanguage(text);
-          session.lang  = lang;
 
-          console.log(`[WhatsApp] From: ${phone} | Lang: ${lang} | Msg: ${text.slice(0, 50)}`);
+          console.log(`[WhatsApp] From: ${phone} | Msg: ${text.slice(0, 50)}`);
 
           // Mark as read
           sendWAMessage(phone, {
@@ -246,19 +220,18 @@ router.post('/webhook', async (req, res) => {
 
           let reply;
 
-          if (isGreeting(text, lang)) {
-            reply = lang === 'te' ? MENU_TE : MENU_EN;
-            await buildTextMessage(phone, reply);
+          if (isGreeting(text)) {
+            await buildTextMessage(phone, MENU_EN);
             continue;
           }
 
-          // Topic shortcuts
-          const topicMap: Record<string, string> = {
-            '1': lang === 'te' ? 'ఆదాయపు పన్ను గురించి సమాచారం' : 'Tell me about income tax filing in India',
-            '2': lang === 'te' ? 'GST గురించి చెప్పండి' : 'Explain GST for small businesses',
-            '3': lang === 'te' ? 'పెట్టుబడులు మరియు పొదుపు గురించి' : 'Best investment options in India',
-            '4': lang === 'te' ? 'నెలవారీ బడ్జెట్ ప్లానింగ్' : 'How to plan a monthly budget',
-            '5': lang === 'te' ? 'మూలధన లాభాల పన్ను' : 'Capital gains tax on shares and mutual funds',
+          // Topic shortcuts (English)
+          const topicMap = {
+            '1': 'Tell me about income tax filing in India',
+            '2': 'Explain GST for small businesses',
+            '3': 'Best investment options in India',
+            '4': 'How to plan a monthly budget',
+            '5': 'Capital gains tax on shares and mutual funds',
           };
 
           const queryText = topicMap[text] || text;
@@ -267,16 +240,11 @@ router.post('/webhook', async (req, res) => {
           const answer = await queryMLService(queryText, phone);
 
           if (!answer) {
-            reply = lang === 'te'
-              ? 'క్షమించండి, ప్రస్తుతం సేవ అందుబాటులో లేదు. తర్వాత ప్రయత్నించండి.'
-              : 'Sorry, the service is temporarily unavailable. Please try again later.';
+            reply = 'Sorry, the service is temporarily unavailable. Please try again later.';
           } else {
             // Trim to WhatsApp 4096 char limit
             reply = answer.length > 4000 ? answer.slice(0, 3990) + '...\n\n_[Reply "more" for details]_' : answer;
-            // Add disclaimer
-            reply += lang === 'te'
-              ? '\n\n_ఈ సమాచారం విద్యా ప్రయోజనాల కోసం మాత్రమే. వ్యక్తిగత సలహా కోసం CA ని సంప్రదించండి._'
-              : '\n\n_This is for educational purposes only. Consult a CA for personalised advice._';
+            reply += '\n\n_This is for educational purposes only. Consult a CA for personalised advice._';
           }
 
           session.history.push({ role: 'user', text: queryText });
