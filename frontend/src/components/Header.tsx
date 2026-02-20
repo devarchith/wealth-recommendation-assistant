@@ -4,9 +4,13 @@ interface HeaderProps {
   isDark: boolean;
   onToggleDark: () => void;
   onClear: () => void;
+  /** Active role label shown in header, e.g. "⚖️ CA Professional" */
+  roleLabel?: string;
+  /** Called when the user wants to switch to a different role workspace */
+  onSwitchRole?: () => void;
 }
 
-export default function Header({ isDark, onToggleDark, onClear }: HeaderProps) {
+export default function Header({ isDark, onToggleDark, onClear, roleLabel, onSwitchRole }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -20,13 +24,25 @@ export default function Header({ isDark, onToggleDark, onClear }: HeaderProps) {
               WealthAdvisor AI
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-tight">
-              RAG + LangChain · Internal benchmark F1@4: 0.92
+              {roleLabel
+                ? <span className="font-medium text-brand-600 dark:text-brand-400">{roleLabel}</span>
+                : 'RAG + LangChain · Internal benchmark F1@4: 0.92'
+              }
             </p>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {onSwitchRole && (
+            <button
+              onClick={onSwitchRole}
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+              title="Switch workspace role"
+            >
+              Switch role
+            </button>
+          )}
           <button
             onClick={onClear}
             className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"

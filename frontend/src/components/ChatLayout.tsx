@@ -7,6 +7,7 @@ import ChatInput from './ChatInput';
 import Header from './Header';
 import TabBar from './tabs/TabBar';
 import DisclaimerFooter from './DisclaimerFooter';
+import RoleSelector, { UserRole, ROLE_OPTIONS } from './RoleSelector';
 import { Message, ApiChatResponse } from '@/types/chat';
 import { sendMessage, sendFeedback } from '@/lib/apiClient';
 
@@ -29,10 +30,18 @@ const WELCOME_MESSAGE: Message = {
 };
 
 export default function ChatLayout() {
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [role, setRole]           = useState<UserRole | null>(null);
+  const [messages, setMessages]   = useState<Message[]>([WELCOME_MESSAGE]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDark, setIsDark] = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+  const [isDark, setIsDark]       = useState(false);
+
+  // Show role selector on first load
+  if (!role) {
+    return <RoleSelector onSelect={setRole} />;
+  }
+
+  const activeRoleConfig = ROLE_OPTIONS.find(r => r.role === role)!;
 
   const toggleDark = useCallback(() => {
     setIsDark((prev) => {
@@ -118,10 +127,20 @@ export default function ChatLayout() {
 
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
-      <Header isDark={isDark} onToggleDark={toggleDark} onClear={handleClearSession} />
+      <Header
+        isDark={isDark}
+        onToggleDark={toggleDark}
+        onClear={handleClearSession}
+        roleLabel={`${activeRoleConfig.icon} ${activeRoleConfig.label}`}
+        onSwitchRole={() => setRole(null)}
+      />
 
       <main className="flex-1 overflow-hidden flex flex-col">
-        <TabBar chatContent={chatPanel} />
+        <TabBar
+          chatContent={chatPanel}
+          visibleTabs={activeRoleConfig.visibleTabs}
+          defaultTab={activeRoleConfig.defaultTab}
+        />
       </main>
 
       <DisclaimerFooter />
