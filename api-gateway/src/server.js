@@ -22,6 +22,7 @@ const healthRoutes    = require('./routes/health');
 const whatsappRoutes  = require('./routes/whatsapp');
 const authRoutes      = require('./routes/auth');
 const billingRoutes   = require('./routes/billing');
+const adminRoutes     = require('./routes/admin');
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use('/api', chatRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── 404 and error handlers ─────────────────────────────────────────────────
 app.use(notFoundHandler);
