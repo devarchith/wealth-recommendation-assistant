@@ -29,7 +29,7 @@ export const ROLE_OPTIONS: RoleOption[] = [
     icon:        '👤',
     accentColor: 'brand',
     features:    ['AI Chat advisor', 'Budget planner', 'Investment tool', 'US & India Tax'],
-    visibleTabs: ['chat', 'budget', 'investment', 'tax', 'india-tax', 'privacy'],
+    visibleTabs: ['chat', 'budget', 'investment', 'tax', 'india-tax', 'pricing', 'privacy'],
     defaultTab:  'chat',
   },
   {
@@ -39,7 +39,7 @@ export const ROLE_OPTIONS: RoleOption[] = [
     icon:        '⚖️',
     accentColor: 'blue',
     features:    ['Client health scores', 'GST & ITR deadlines', 'Anomaly flags', 'Billing tracker'],
-    visibleTabs: ['ca', 'chat', 'india-tax', 'privacy'],
+    visibleTabs: ['ca', 'chat', 'india-tax', 'pricing', 'privacy'],
     defaultTab:  'ca',
   },
   {
@@ -49,7 +49,7 @@ export const ROLE_OPTIONS: RoleOption[] = [
     icon:        '🌾',
     accentColor: 'green',
     features:    ['Penalty & GST alerts', 'Stock & inventory', 'Lot milling log', 'MSP reference'],
-    visibleTabs: ['ricemill', 'chat', 'business', 'privacy'],
+    visibleTabs: ['ricemill', 'chat', 'business', 'pricing', 'privacy'],
     defaultTab:  'ricemill',
   },
   {
@@ -59,7 +59,7 @@ export const ROLE_OPTIONS: RoleOption[] = [
     icon:        '🏪',
     accentColor: 'purple',
     features:    ['Quick P&L estimator', 'GST compliance', 'Cash flow tracker', 'Payroll summary'],
-    visibleTabs: ['business', 'chat', 'india-tax', 'budget', 'privacy'],
+    visibleTabs: ['business', 'chat', 'india-tax', 'budget', 'pricing', 'privacy'],
     defaultTab:  'business',
   },
 ];
