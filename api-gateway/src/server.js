@@ -17,8 +17,9 @@ dotenv.config();
 const { corsMiddleware } = require('./middleware/cors');
 const { rateLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const chatRoutes = require('./routes/chat');
-const healthRoutes = require('./routes/health');
+const chatRoutes      = require('./routes/chat');
+const healthRoutes    = require('./routes/health');
+const whatsappRoutes  = require('./routes/whatsapp');
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use('/api/', rateLimiter);
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', healthRoutes);
 app.use('/api', chatRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 // ── 404 and error handlers ─────────────────────────────────────────────────
 app.use(notFoundHandler);
