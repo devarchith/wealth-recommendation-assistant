@@ -10,8 +10,9 @@ const TaxTab        = dynamic(() => import('./TaxTab'),        { ssr: false });
 const IndiaTaxTab   = dynamic(() => import('./IndiaTaxTab'),   { ssr: false });
 const BusinessTab   = dynamic(() => import('./BusinessTab'),   { ssr: false });
 const CAPortalTab   = dynamic(() => import('./CAPortalTab'),   { ssr: false });
+const RiceMillTab   = dynamic(() => import('./RiceMillTab'),   { ssr: false });
 
-type Tab = 'chat' | 'budget' | 'investment' | 'tax' | 'india-tax' | 'business' | 'ca';
+type Tab = 'chat' | 'budget' | 'investment' | 'tax' | 'india-tax' | 'business' | 'ca' | 'ricemill';
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'chat',       label: 'AI Chat',     icon: '💬' },
@@ -21,6 +22,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'india-tax',  label: 'India Tax',   icon: '🇮🇳' },
   { id: 'business',   label: 'Business',    icon: '🏪' },
   { id: 'ca',         label: 'CA Portal',   icon: '⚖️' },
+  { id: 'ricemill',   label: 'Rice Mill',   icon: '🌾' },
 ];
 
 interface TabBarProps {
@@ -75,6 +77,7 @@ export default function TabBar({ chatContent }: TabBarProps) {
               {activeTab === 'india-tax'  && <IndiaTaxTab />}
               {activeTab === 'business'   && <BusinessTab />}
               {activeTab === 'ca'         && <CAPortalTab />}
+              {activeTab === 'ricemill'   && <RiceMillTab />}
             </div>
           </div>
         )}
