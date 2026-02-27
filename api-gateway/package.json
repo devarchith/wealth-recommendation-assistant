@@ -1,0 +1,38 @@
+{
+  "name": "wealth-advisor-api-gateway",
+  "version": "1.0.0",
+  "description": "Express API gateway for WealthAdvisor AI — proxies requests to the ML service with session management, rate limiting, and CORS",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop wealth-advisor-gateway",
+    "pm2:reload": "pm2 reload wealth-advisor-gateway",
+    "pm2:logs": "pm2 logs wealth-advisor-gateway",
+    "test": "jest --forceExit",
+    "lint": "eslint src/**/*.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "uuid": "^10.0.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "eslint": "^9.9.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Devarchith Parashara Batchu <devarchithbatchu@gmail.com>",
+  "license": "MIT"
+}
