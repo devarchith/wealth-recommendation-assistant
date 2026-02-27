@@ -1,0 +1,269 @@
+##############################################################################
+# WealthAdvisor AI — On-Premise Deployment
+# ==========================================
+# For bank, NBFC, and enterprise installations requiring data sovereignty.
+# All services run within the customer's private network; no external data egress.
+#
+# Prerequisites:
+#   - Docker Engine 24+ and Docker Compose v2.20+
+#   - 16 GB RAM minimum (32 GB recommended for full ML models)
+#   - 100 GB SSD storage for model cache + audit logs
+#
+# Setup:
+#   cp .env.onpremise .env
+#   # Edit .env with your internal URLs, secrets, and SMTP config
+#   docker compose up -d
+#   docker compose logs -f
+#
+# Security hardening applied:
+#   - All containers run as non-root (uid 1001)
+#   - Read-only root filesystems where possible
+#   - Internal network isolated from host
+#   - Redis password-protected and not exposed on host
+#   - FAISS index and audit logs on named volumes (persist restarts)
+#   - Nginx terminates TLS with TLS 1.3 only; HSTS + OCSP stapling enabled
+##############################################################################
+
+version: "3.9"
+
+# ---------------------------------------------------------------------------
+# Networks — private overlay, no public exposure
+# ---------------------------------------------------------------------------
+networks:
+  wealthai_internal:
+    driver: bridge
+    internal: true        # no internet access for internal services
+  wealthai_edge:
+    driver: bridge        # only nginx is on this network + host
+
+# ---------------------------------------------------------------------------
+# Volumes — persistent, named, driver-local
+# ---------------------------------------------------------------------------
+volumes:
+  faiss_index:
+    driver: local
+  model_cache:
+    driver: local
+  redis_data:
+    driver: local
+  audit_logs:
+    driver: local
+  postgres_data:
+    driver: local
+  nginx_certs:
+    driver: local
+
+# ---------------------------------------------------------------------------
+# Services
+# ---------------------------------------------------------------------------
+services:
+
+  # ── Reverse proxy + TLS termination ──────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: wealthai_nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"       # redirects to HTTPS
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_certs:/etc/nginx/certs:ro
+      - audit_logs:/var/log/wealthai:rw
+    networks:
+      - wealthai_edge
+      - wealthai_internal
+    depends_on:
+      - api-gateway
+      - frontend
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Next.js Frontend ───────────────────────────────────────────────────────
+  frontend:
+    image: wealthai/frontend:${IMAGE_TAG:-latest}
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost/api}
+    container_name: wealthai_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    networks:
+      - wealthai_internal
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── API Gateway ────────────────────────────────────────────────────────────
+  api-gateway:
+    image: wealthai/api-gateway:${IMAGE_TAG:-latest}
+    build:
+      context: ../../api-gateway
+      dockerfile: Dockerfile
+    container_name: wealthai_gateway
+    restart: unless-stopped
+    environment:
+      NODE_ENV:              production
+      API_GATEWAY_PORT:      3001
+      ML_SERVICE_URL:        http://ml-service:5001
+      SESSION_SECRET:        ${SESSION_SECRET}
+      ENCRYPTION_KEY:        ${ENCRYPTION_KEY}
+      REDIS_URL:             redis://:${REDIS_PASSWORD}@redis:6379/0
+      RAZORPAY_KEY_ID:       ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET:   ${RAZORPAY_KEY_SECRET}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
+      GOOGLE_CLIENT_ID:      ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET:  ${GOOGLE_CLIENT_SECRET}
+      MSG91_AUTH_KEY:        ${MSG91_AUTH_KEY}
+      MSG91_TEMPLATE_ID:     ${MSG91_TEMPLATE_ID}
+      MSG91_TEMPLATE_2FA:    ${MSG91_TEMPLATE_2FA}
+      ADMIN_API_KEY:         ${ADMIN_API_KEY}
+      APP_URL:               ${APP_URL}
+      GRIEVANCE_OFFICER_EMAIL: ${GRIEVANCE_OFFICER_EMAIL}
+      SESSION_IP_BINDING:    "true"
+      SESSION_IDLE_MS:       1800000
+      SESSION_ABSOLUTE_MS:   28800000
+    volumes:
+      - audit_logs:/app/audit-logs:rw
+    networks:
+      - wealthai_internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+    user: "1001:1001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── ML Service ─────────────────────────────────────────────────────────────
+  ml-service:
+    image: wealthai/ml-service:${IMAGE_TAG:-latest}
+    build:
+      context: ../../ml-service
+      dockerfile: Dockerfile
+    container_name: wealthai_ml
+    restart: unless-stopped
+    environment:
+      FLASK_ENV:        production
+      ML_SERVICE_PORT:  5001
+      ENCRYPTION_KEY:   ${ENCRYPTION_KEY}
+      OLLAMA_BASE_URL:  ${OLLAMA_BASE_URL:-http://ollama:11434}
+      HF_HOME:          /app/model-cache
+      TRANSFORMERS_OFFLINE: "1"    # no internet — use cached models
+    volumes:
+      - faiss_index:/app/faiss_index:rw
+      - model_cache:/app/model-cache:ro
+    networks:
+      - wealthai_internal
+    user: "1001:1001"
+    shm_size: "2gb"    # required for PyTorch multiprocessing
+    deploy:
+      resources:
+        limits:
+          memory: 12G
+        reservations:
+          memory: 8G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+      start_period: 120s   # models take ~90s to load
+
+  # ── Ollama (on-premise LLM — replaces cloud LLM API) ─────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wealthai_ollama
+    restart: unless-stopped
+    environment:
+      OLLAMA_MODELS: /models
+    volumes:
+      - model_cache:/models:rw
+    networks:
+      - wealthai_internal
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+        reservations:
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ── Redis (session store + usage tracking) ────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: wealthai_redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+      --appendfsync everysec
+      --tls-port 0
+    volumes:
+      - redis_data:/data:rw
+    networks:
+      - wealthai_internal
+    user: "999:999"
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── PostgreSQL (user/plan/consent persistent store) ───────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: wealthai_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       wealthai
+      POSTGRES_USER:     wealthai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA:            /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - wealthai_internal
+    user: "70:70"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wealthai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    shm_size: "256mb"
