@@ -65,6 +65,8 @@ export default function ChatLayout() {
         content: data.answer,
         sources: data.sources,
         latency_ms: data.latency_ms,
+        confidence: data.confidence,
+        regulation_ref: data.regulation_ref,
         timestamp: new Date().toISOString(),
         feedback: null,
       };
