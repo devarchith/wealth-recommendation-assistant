@@ -1,6 +1,52 @@
 'use client';
 
 import { useState } from 'react';
+import { type Locale, useTranslation } from '@/lib/i18n';
+
+// ---------------------------------------------------------------------------
+// Language toggle (English active | Telugu Coming Soon)
+// ---------------------------------------------------------------------------
+
+const LOCALE_OPTIONS: { locale: Locale; label: string; native: string; comingSoon?: boolean }[] = [
+  { locale: 'en', label: 'English', native: 'English' },
+  { locale: 'te', label: 'Telugu',  native: 'తెలుగు', comingSoon: true },
+];
+
+function LanguageToggle({
+  locale,
+  onChange,
+}: {
+  locale: Locale;
+  onChange: (l: Locale) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-0.5">
+      {LOCALE_OPTIONS.map(opt => (
+        <div key={opt.locale} className="relative">
+          <button
+            disabled={opt.comingSoon}
+            onClick={() => !opt.comingSoon && onChange(opt.locale)}
+            title={opt.comingSoon ? 'Coming Soon' : opt.label}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              locale === opt.locale && !opt.comingSoon
+                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                : opt.comingSoon
+                  ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+            }`}
+          >
+            {opt.native}
+            {opt.comingSoon && (
+              <span className="ml-1 px-1 py-0.5 bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-400 text-[9px] rounded leading-none">
+                Soon
+              </span>
+            )}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -150,6 +196,8 @@ export default function CAPortalTab() {
   const [statusFilter, setFilter]   = useState<'all' | 'green' | 'amber' | 'red'>('all');
   const [activeSection, setSection] = useState<'control-center' | 'clients' | 'billing' | 'anomalies'>('control-center');
   const [expandedAnomaly, setExpandedAnomaly] = useState<string | null>(null);
+  const [locale, setLocale]         = useState<Locale>('en');
+  const { t }                       = useTranslation(locale);
 
   const filtered = SAMPLE_CLIENTS.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -171,12 +219,13 @@ export default function CAPortalTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">CA Professional Portal</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t('caPortal')}</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Control center · Compliance tracking · Anomaly detection · Billing
           </p>
         </div>
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
           {SECTIONS.map(s => (
             <button
               key={s}
@@ -190,6 +239,7 @@ export default function CAPortalTab() {
               {s === 'control-center' ? 'Control Center' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
+          </div>
         </div>
       </div>
 
@@ -325,7 +375,7 @@ export default function CAPortalTab() {
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="text"
-              placeholder="Search by name or PAN..."
+              placeholder={locale === 'en' ? 'Search by name or PAN...' : 'పేరు లేదా PAN ద్వారా వెతకండి...'}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600
