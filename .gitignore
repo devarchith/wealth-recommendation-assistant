@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+ENV/
+.env
+*.env
+*.faiss
+faiss_index/
+embedding_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+*.tgz
+.yarn/
+
+# Next.js
+.next/
+out/
+.vercel
+.turbo
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# AWS
+.serverless/
+cdk.out/
+
+# Testing
+coverage/
+.pytest_cache/
+htmlcov/
+.nyc_output/
+
+# PM2
+.pm2/
+ecosystem.config.js.bak
+
+# Misc
+*.bak
+*.tmp
+.cache/
