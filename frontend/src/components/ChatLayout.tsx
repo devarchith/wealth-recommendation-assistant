@@ -20,7 +20,10 @@ const WELCOME_MESSAGE: Message = {
     '- **Retirement** — 401(k), IRA, Social Security optimization\n' +
     '- **Debt management** — avalanche vs snowball, mortgages\n' +
     '- **Tax planning** — tax-loss harvesting, HSA strategy\n\n' +
-    'Ask me anything about your financial goals!',
+    'Ask me anything about your financial goals!\n\n' +
+    '> **Disclaimer:** Responses are for educational purposes only and do not constitute ' +
+    'licensed CA, IA (SEBI), or legal advice. Performance figures (e.g. F1@4 = 0.92) are ' +
+    'internal benchmarks on test datasets, not guarantees on your specific queries.',
   sources: [],
   timestamp: new Date().toISOString(),
 };
