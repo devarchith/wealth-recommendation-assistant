@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import Header from './Header';
+import TabBar from './tabs/TabBar';
 import { Message, ApiChatResponse } from '@/types/chat';
 import { sendMessage, sendFeedback } from '@/lib/apiClient';
 
@@ -91,24 +92,30 @@ export default function ChatLayout() {
     setError(null);
   }, []);
 
+  const chatPanel = (
+    <>
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        onFeedback={handleFeedback}
+      />
+
+      {error && (
+        <div className="mx-2 mb-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-sm animate-fade-in">
+          {error}
+        </div>
+      )}
+
+      <ChatInput onSend={handleSend} isLoading={isLoading} />
+    </>
+  );
+
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
       <Header isDark={isDark} onToggleDark={toggleDark} onClear={handleClearSession} />
 
-      <main className="flex-1 overflow-hidden flex flex-col max-w-4xl w-full mx-auto px-4 pb-4">
-        <MessageList
-          messages={messages}
-          isLoading={isLoading}
-          onFeedback={handleFeedback}
-        />
-
-        {error && (
-          <div className="mx-2 mb-2 px-4 py-2 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-sm animate-fade-in">
-            {error}
-          </div>
-        )}
-
-        <ChatInput onSend={handleSend} isLoading={isLoading} />
+      <main className="flex-1 overflow-hidden flex flex-col">
+        <TabBar chatContent={chatPanel} />
       </main>
     </div>
   );
