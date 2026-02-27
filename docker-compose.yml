@@ -1,0 +1,100 @@
+version: "3.9"
+
+# ── WealthAdvisor AI — Full Stack Local Development ────────────────────────
+# Services:
+#   ml-service   → Flask + LangChain + FAISS  (port 5001)
+#   api-gateway  → Node.js + Express          (port 3001)
+#   frontend     → Next.js 14                 (port 3000)
+#
+# Usage:
+#   docker-compose up --build          # first run (builds all images)
+#   docker-compose up                  # subsequent runs (uses cache)
+#   docker-compose logs -f ml-service  # tail logs for a service
+#   docker-compose down -v             # stop and remove volumes
+
+networks:
+  wealth-net:
+    driver: bridge
+
+volumes:
+  faiss-index:
+  embedding-cache:
+
+services:
+  # ── ML Service ─────────────────────────────────────────────────────────
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    image: wealth-ml-service:latest
+    container_name: wealth-ml-service
+    networks: [wealth-net]
+    ports:
+      - "5001:5001"
+    environment:
+      ML_SERVICE_PORT: 5001
+      FLASK_ENV: development
+      FLASK_DEBUG: 0
+      EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+      FAISS_INDEX_PATH: /app/faiss_index
+      EMBEDDING_CACHE_PATH: /app/embedding_cache
+      MEMORY_WINDOW_SIZE: 5
+    volumes:
+      - faiss-index:/app/faiss_index
+      - embedding-cache:/app/embedding_cache
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s  # LLM model download can be slow on first run
+    restart: unless-stopped
+
+  # ── API Gateway ─────────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: wealth-api-gateway:latest
+    container_name: wealth-api-gateway
+    networks: [wealth-net]
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      API_GATEWAY_PORT: 3001
+      ML_SERVICE_URL: http://ml-service:5001
+      SESSION_SECRET: local-dev-secret-change-in-production
+      CORS_ORIGIN: http://localhost:3000
+      RATE_LIMIT_WINDOW_MS: 60000
+      RATE_LIMIT_MAX_REQUESTS: 100
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e",
+             "require('http').get('http://localhost:3001/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: wealth-frontend:latest
+    container_name: wealth-frontend
+    networks: [wealth-net]
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NODE_ENV: production
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    restart: unless-stopped
