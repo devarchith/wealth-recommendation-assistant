@@ -7,6 +7,7 @@ import { Message } from '@/types/chat';
 import SourceList from './SourceList';
 import FeedbackButtons from './FeedbackButtons';
 import LatencyBadge from './LatencyBadge';
+import ExplainabilityPanel from './ExplainabilityPanel';
 
 interface MessageBubbleProps {
   message: Message;
@@ -111,6 +112,15 @@ export default function MessageBubble({ message, onFeedback }: MessageBubbleProp
                 onFeedback={onFeedback}
               />
             </div>
+
+            {/* Explainability: why this answer */}
+            <ExplainabilityPanel
+              assumption={message.assumption}
+              confidence={message.confidence}
+              regulationRef={message.regulation_ref}
+              intent={message.intent}
+              strategy={message.strategy}
+            />
           </div>
         )}
       </div>

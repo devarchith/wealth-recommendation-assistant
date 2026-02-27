@@ -20,6 +20,12 @@ export interface Message {
   confidence?: number;
   /** Regulation or section cited by the AI, e.g. "Sec 80C IT Act" (optional) */
   regulation_ref?: string;
+  /** Key assumption the AI made to derive this answer */
+  assumption?: string;
+  /** BERT-detected intent, e.g. "tax" */
+  intent?: string;
+  /** LinUCB strategy selected, e.g. "intent_boosted" */
+  strategy?: string;
 }
 
 export interface ChatState {
@@ -40,4 +46,10 @@ export interface ApiChatResponse {
   confidence?: number;
   /** Regulation or section cited, e.g. "Sec 80C IT Act 1961" */
   regulation_ref?: string;
+  /** Key assumption made by the model */
+  assumption?: string;
+  /** Intent detected by BERT pipeline */
+  intent?: string;
+  /** LinUCB response strategy selected */
+  strategy?: string;
 }
