@@ -132,6 +132,27 @@ def feedback():
 # Entry point
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Metrics endpoint (paper §5 — evaluation dashboard)
+# ---------------------------------------------------------------------------
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    """
+    GET /metrics
+    Returns aggregate evaluation metrics over the rolling 1000-query window.
+    Exposes: Precision@4, Recall@4, F1@4 (target 0.92), MRR, NDCG@4,
+    faithfulness, latency breakdown, cache hit rate, intent distribution.
+    """
+    from evaluation_metrics import get_metrics_store  # noqa: PLC0415
+    store = get_metrics_store()
+    return jsonify(store.aggregate())
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
 if __name__ == "__main__":
     port = int(os.environ.get("ML_SERVICE_PORT", 5001))
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
